@@ -1,6 +1,5 @@
 package it.ddalpra.acme.ticketmanagement.adapter.out.persistence;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -9,6 +8,7 @@ import it.ddalpra.acme.ticketmanagement.domain.Ticket;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 
 @ApplicationScoped
@@ -32,9 +32,22 @@ public class TicketRepository implements TicketPersistencePort {
     }
 
     @Override
-    public List<Ticket> findAll() {
-        return em.createQuery("SELECT t FROM TicketEntity t", TicketEntity.class)
-                .getResultList()
+    public List<Ticket> findAll(int page, int size, Ticket.TicketStatus status) {
+        String jpql = "SELECT t FROM TicketEntity t";
+        if (status != null) {
+            jpql += " WHERE t.status = :status";
+        }
+
+        TypedQuery<TicketEntity> query = em.createQuery(jpql, TicketEntity.class);
+
+        if (status != null) {
+            query.setParameter("status", status);
+        }
+
+        query.setFirstResult(page * size);
+        query.setMaxResults(size);
+
+        return query.getResultList()
                 .stream()
                 .map(TicketEntity::toDomain)
                 .collect(Collectors.toList());
@@ -48,11 +61,11 @@ public class TicketRepository implements TicketPersistencePort {
             existing.setTitle(ticket.getTitle());
             existing.setDescription(ticket.getDescription());
             existing.setStatus(ticket.getStatus());
-            existing.setUpdateDate(LocalDateTime.now());
+            existing.setUpdateDate(java.time.LocalDateTime.now());
             em.merge(existing);
             return TicketEntity.toDomain(existing);
         }
-        return null; // O lanciare un'eccezione
+        return null;
     }
 
     @Override

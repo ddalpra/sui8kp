@@ -2,18 +2,36 @@ package it.ddalpra.acme.ticketmanagement.domain;
 
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+
 public class Ticket {
     private Long id;
+
+    @NotBlank(message = "Il titolo è obbligatorio")
+    @Size(min = 3, max = 100, message = "Il titolo deve essere tra 3 e 100 caratteri")
     private String title;
+
+    @NotBlank(message = "La descrizione è obbligatoria")
+    @Size(max = 500, message = "La descrizione non può superare i 500 caratteri")
     private String description;
-    private String status;
+
+    private TicketStatus status;
     private LocalDateTime creationDate;
     private LocalDateTime updateDate;
+
+    public enum TicketStatus {
+        OPEN,
+        IN_PROGRESS,
+        RESOLVED,
+        CLOSED
+    }
 
     public Ticket() {
         this.creationDate = LocalDateTime.now();
         this.updateDate = LocalDateTime.now();
-        this.status = "OPEN";
+        this.status = TicketStatus.OPEN;
     }
 
     public Ticket(String title, String description) {
@@ -22,7 +40,7 @@ public class Ticket {
         this.description = description;
     }
 
-    // Getters and Setters
+    // Getters and Setters (aggiornati per l'enum Status)
     public Long getId() {
         return id;
     }
@@ -47,11 +65,11 @@ public class Ticket {
         this.description = description;
     }
 
-    public String getStatus() {
+    public TicketStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TicketStatus status) {
         this.status = status;
     }
 
@@ -77,7 +95,7 @@ public class Ticket {
                 "id=" + id +
                 ", title='" + title + '\'' +
                 ", description='" + description + '\'' +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 ", creationDate=" + creationDate +
                 ", updateDate=" + updateDate +
                 '}';

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import it.ddalpra.acme.ticketmanagement.domain.Ticket;
 
+
 @Entity
 @Table(name = "tickets")
 public class TicketEntity {
@@ -14,14 +15,45 @@ public class TicketEntity {
     private Long id;
     private String title;
     private String description;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private Ticket.TicketStatus status;
     private LocalDateTime creationDate;
     private LocalDateTime updateDate;
+
+    // Costruttori, Getters, Setters (aggiornati per l'enum)
+    // ...
+
+    public static Ticket toDomain(TicketEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        Ticket ticket = new Ticket(entity.getTitle(), entity.getDescription());
+        ticket.setId(entity.getId());
+        ticket.setStatus(entity.getStatus());
+        ticket.setCreationDate(entity.getCreationDate());
+        ticket.setUpdateDate(entity.getUpdateDate());
+        return ticket;
+    }
+
+    public static TicketEntity fromDomain(Ticket ticket) {
+        if (ticket == null) {
+            return null;
+        }
+        return new TicketEntity(
+                ticket.getId(),
+                ticket.getTitle(),
+                ticket.getDescription(),
+                ticket.getStatus(),
+                ticket.getCreationDate(),
+                ticket.getUpdateDate()
+        );
+    }
 
     public TicketEntity() {
     }
 
-    public TicketEntity(Long id, String title, String description, String status, LocalDateTime creationDate, LocalDateTime updateDate) {
+    public TicketEntity(Long id, String title, String description, Ticket.TicketStatus status, LocalDateTime creationDate, LocalDateTime updateDate) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -54,11 +86,11 @@ public class TicketEntity {
         this.description = description;
     }
 
-    public String getStatus() {
+    public Ticket.TicketStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Ticket.TicketStatus status) {
         this.status = status;
     }
 
@@ -76,33 +108,5 @@ public class TicketEntity {
 
     public void setUpdateDate(LocalDateTime updateDate) {
         this.updateDate = updateDate;
-    }
-
-    // Metodo di conversione da Entity a Domain
-    public static Ticket toDomain(TicketEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        Ticket ticket = new Ticket(entity.getTitle(), entity.getDescription());
-        ticket.setId(entity.getId());
-        ticket.setStatus(entity.getStatus());
-        ticket.setCreationDate(entity.getCreationDate());
-        ticket.setUpdateDate(entity.getUpdateDate());
-        return ticket;
-    }
-
-    // Metodo di conversione da Domain a Entity
-    public static TicketEntity fromDomain(Ticket ticket) {
-        if (ticket == null) {
-            return null;
-        }
-        return new TicketEntity(
-                ticket.getId(),
-                ticket.getTitle(),
-                ticket.getDescription(),
-                ticket.getStatus(),
-                ticket.getCreationDate(),
-                ticket.getUpdateDate()
-        );
     }
 }
