@@ -3,12 +3,12 @@ package it.ddalpra.acme.ticketmanagement.application.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import it.ddalpra.acme.ticketmanagement.application.exception.DuplicateTitleException;
 import it.ddalpra.acme.ticketmanagement.application.port.in.TicketServicePort;
 import it.ddalpra.acme.ticketmanagement.application.port.out.TicketPersistencePort;
 import it.ddalpra.acme.ticketmanagement.domain.Ticket;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 
 
 @ApplicationScoped
@@ -17,11 +17,17 @@ public class TicketService implements TicketServicePort {
     @Inject
     TicketPersistencePort ticketPersistencePort;
 
+    @Inject
+    AuditLogService auditLogService;
+
     @Override
+    @Transactional
     public Ticket createTicket(Ticket ticket) {
         ticket.setCreationDate(LocalDateTime.now());
         ticket.setUpdateDate(LocalDateTime.now());
-        return ticketPersistencePort.save(ticket);
+        Ticket createdTicket = ticketPersistencePort.save(ticket);
+        auditLogService.logTicketCreated(createdTicket.getId(), "Ticket creato con titolo: " + createdTicket.getTitle());
+        return createdTicket;
     }
 
     @Override
@@ -35,20 +41,33 @@ public class TicketService implements TicketServicePort {
     }
 
     @Override
+    @Transactional
     public Ticket updateTicket(Long id, Ticket ticket) {
         Ticket existingTicket = ticketPersistencePort.findById(id);
         if (existingTicket == null) {
             return null;
         }
+        String oldDetails = String.format("Ticket ID %d: Titolo='%s', Descrizione='%s', Stato='%s'",
+                                        id, existingTicket.getTitle(), existingTicket.getDescription(), existingTicket.getStatus());
         existingTicket.setTitle(ticket.getTitle());
         existingTicket.setDescription(ticket.getDescription());
         existingTicket.setStatus(ticket.getStatus());
         existingTicket.setUpdateDate(LocalDateTime.now());
-        return ticketPersistencePort.update(existingTicket);
+        Ticket updatedTicket = ticketPersistencePort.update(existingTicket);
+        String newDetails = String.format("Ticket ID %d: Titolo='%s', Descrizione='%s', Stato='%s'",
+                                        id, updatedTicket.getTitle(), updatedTicket.getDescription(), updatedTicket.getStatus());
+        auditLogService.logTicketUpdated(id, "Dettagli precedenti: " + oldDetails + " | Nuovi dettagli: " + newDetails);
+        return updatedTicket;
     }
 
     @Override
+    @Transactional // Assicurati che l'audit log sia nella stessa transazione dell'eliminazione
     public void deleteTicket(Long id) {
-        ticketPersistencePort.deleteById(id);
+        Ticket existingTicket = ticketPersistencePort.findById(id);
+        if (existingTicket != null) {
+            ticketPersistencePort.deleteById(id);
+            auditLogService.logTicketDeleted(id);
+        }
+        
     }
 }
